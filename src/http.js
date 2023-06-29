@@ -3,17 +3,16 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-'use strict';
+"use strict";
 
-var url = require('url');
-var requestModule = require('request');
-var debug = require('debug')('strong-soap:http');
-var debugSensitive = require('debug')('strong-soap:http:sensitive');
-var httpntlm = require('httpntlm-maa');
-var uuid = require('uuid').v4;
+var url = require("url");
+var requestModule = require("needle");
+var debug = require("debug")("strong-soap:http");
+var debugSensitive = require("debug")("strong-soap:http:sensitive");
+var httpntlm = require("httpntlm-maa");
+var uuid = require("uuid").v4;
 
-
-var VERSION = require('../package.json').version;
+var VERSION = require("../package.json").version;
 
 /**
  * A class representing the http client
@@ -38,30 +37,33 @@ class HttpClient {
    */
   buildRequest(rurl, data, exheaders, exoptions) {
     var curl = url.parse(rurl);
-    var secure = curl.protocol === 'https:';
+    var secure = curl.protocol === "https:";
     var host = curl.hostname;
     var port = parseInt(curl.port, 10);
-    var path = [curl.pathname || '/', curl.search || '', curl.hash || ''].join('');
-    var method = data ? 'POST' : 'GET';
+    var path = [curl.pathname || "/", curl.search || "", curl.hash || ""].join(
+      ""
+    );
+    var method = data ? "POST" : "GET";
     var headers = {
-      'User-Agent': 'strong-soap/' + VERSION,
-      'Accept': 'text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8',
-      'Accept-Encoding': 'none',
-      'Accept-Charset': 'utf-8',
-      'Connection': 'close',
-      'Host': host + (isNaN(port) ? '' : ':' + port)
+      "User-Agent": "strong-soap/" + VERSION,
+      Accept:
+        "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
+      "Accept-Encoding": "none",
+      "Accept-Charset": "utf-8",
+      Connection: "close",
+      Host: host + (isNaN(port) ? "" : ":" + port),
     };
     var attr;
     var header;
-    var attachments = []
-    var mergeOptions = ['headers'];
+    var attachments = [];
+    var mergeOptions = ["headers"];
     if (exoptions) {
       attachments = exoptions.attachments || [];
     }
 
-    if (typeof data === 'string' && attachments.length === 0) {
-      headers['Content-Length'] = Buffer.byteLength(data, 'utf8');
-      headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    if (typeof data === "string" && attachments.length === 0) {
+      headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+      headers["Content-Type"] = "application/x-www-form-urlencoded";
     }
 
     exheaders = exheaders || {};
@@ -73,33 +75,38 @@ class HttpClient {
       uri: curl,
       method: method,
       headers: headers,
-      followAllRedirects: true
+      followAllRedirects: true,
     };
 
     if (attachments.length > 0) {
       const start = uuid();
-      headers['Content-Type'] =
-        'multipart/related; type="application/xop+xml"; start="<' + start + '>"; start-info="text/xml"; boundary=' + uuid();
-      const multipart = [{
-        'Content-Type': 'application/xop+xml; charset=UTF-8; type="text/xml"',
-        'Content-ID': '<' + start + '>',
-        'body': data,
-      }];
+      headers["Content-Type"] =
+        'multipart/related; type="application/xop+xml"; start="<' +
+        start +
+        '>"; start-info="text/xml"; boundary=' +
+        uuid();
+      const multipart = [
+        {
+          "Content-Type": 'application/xop+xml; charset=UTF-8; type="text/xml"',
+          "Content-ID": "<" + start + ">",
+          body: data,
+        },
+      ];
 
       attachments.forEach((attachment) => {
         multipart.push({
-          'Content-Type': attachment.mimetype,
-          'Content-Transfer-Encoding': 'binary',
-          'Content-ID': '<' + attachment.contentId + '>',
-          'Content-Disposition': 'attachment; filename="' + attachment.name + '"',
-          'body': attachment.body,
+          "Content-Type": attachment.mimetype,
+          "Content-Transfer-Encoding": "binary",
+          "Content-ID": "<" + attachment.contentId + ">",
+          "Content-Disposition":
+            'attachment; filename="' + attachment.name + '"',
+          body: attachment.body,
         });
       });
       options.multipart = multipart;
     } else {
       options.body = data;
     }
-
 
     exoptions = exoptions || {};
     for (attr in exoptions) {
@@ -111,7 +118,7 @@ class HttpClient {
         options[attr] = exoptions[attr];
       }
     }
-    debug('Http request: %j', options);
+    debug("Http request: %j", options);
     return options;
   }
 
@@ -123,12 +130,13 @@ class HttpClient {
    * @param {Object} The parsed body
    */
   handleResponse(req, res, body) {
-    debug('Http response body: %j', body);
-    if (typeof body === 'string') {
+    debug("Http response body: %j", body);
+    if (typeof body === "string") {
       // Remove any extra characters that appear before or after the SOAP
       // envelope.
       var match = body.match(
-        /(?:<\?[^?]*\?>[\s]*)?<([^:]*):Envelope([\S\s]*)<\/\1:Envelope>/i);
+        /(?:<\?[^?]*\?>[\s]*)?<([^:]*):Envelope([\S\s]*)<\/\1:Envelope>/i
+      );
       if (match) {
         body = match[0];
       }
@@ -141,7 +149,11 @@ class HttpClient {
     //if ntlmSecurity is not set, then remote web service is not NTLM authenticated Web Service
     if (ntlmSecurity == null) {
       return false;
-    } else if (methodName === 'GET' && (ntlmSecurity.wsdlAuthRequired == null || ntlmSecurity.wsdlAuthRequired === false)) {
+    } else if (
+      methodName === "GET" &&
+      (ntlmSecurity.wsdlAuthRequired == null ||
+        ntlmSecurity.wsdlAuthRequired === false)
+    ) {
       //In some WebServices, getting remote WSDL is not NTLM authenticated. Only WebService invocation is NTLM authenticated.
       return false;
     }
@@ -152,6 +164,10 @@ class HttpClient {
   request(rurl, data, callback, exheaders, exoptions) {
     var self = this;
     var options = self.buildRequest(rurl, data, exheaders, exoptions);
+    console.log(
+      "🚀 ~ file: http.js:167 ~ HttpClient ~ request ~ options:",
+      options
+    );
     var headers = options.headers;
     var req;
 
@@ -161,34 +177,53 @@ class HttpClient {
     var ntlmSecurity = this.options.NTLMSecurity;
     var ntlmAuth = self.isNtlmAuthRequired(ntlmSecurity, options.method);
     if (!ntlmAuth) {
-      req = self._request(options, function (err, res, body) {
+      if (options.method === "POST") {
+        req = self._request.post(
+          options.url,
+          isMultipart ? options.multipart : options.body,
+          { multipart: isMultipart, headers: options.headers },
+          function (err, res, body) {
+            if (err) {
+              return callback(err);
+            }
+            body = self.handleResponse(req, res, body);
+            callback(null, res, body);
+          }
+        );
+      } else if (options.method === "GET") {
+        req = self._request.get(
+          options.url,
+          { headers: options.headers },
+          function (err, res, body) {
+            if (err) {
+              return callback(err);
+            }
+            body = self.handleResponse(req, res, body);
+            callback(null, res, body);
+          }
+        );
+      }
+    } else {
+      //httpntlm code needs 'url' in options{}. It should be plain string, not parsed uri
+      options.url = rurl;
+      options.username = ntlmSecurity.username;
+      options.password = ntlmSecurity.password;
+      options.domain = ntlmSecurity.domain;
+      options.workstation = ntlmSecurity.workstation;
+      options.request = requestModule;
+      options.ntlm = { strict: true };
+      //httpntlm code uses lower case for method names - 'get', 'post' etc
+      var method = options.method.toLocaleLowerCase();
+      debugSensitive("NTLM options: %j for method: %s", options, method);
+      debug("httpntlm method: %s", method);
+      req = httpntlm["method"](method, options, function (err, res) {
         if (err) {
           return callback(err);
         }
-        body = self.handleResponse(req, res, body);
+        var body = self.handleResponse(req, res, res.body);
         callback(null, res, body);
       });
-    } else {
-        //httpntlm code needs 'url' in options{}. It should be plain string, not parsed uri
-        options.url = rurl;
-        options.username = ntlmSecurity.username;
-        options.password = ntlmSecurity.password;
-        options.domain = ntlmSecurity.domain;
-        options.workstation = ntlmSecurity.workstation;
-        options.request = requestModule;
-        options.ntlm = { strict: true };
-        //httpntlm code uses lower case for method names - 'get', 'post' etc
-        var method = options.method.toLocaleLowerCase();
-        debugSensitive('NTLM options: %j for method: %s', options, method);
-        debug('httpntlm method: %s', method);
-        req = httpntlm['method'](method, options, function (err, res) {
-          if (err) {
-            return callback(err);
-          }
-          var body = self.handleResponse(req, res, res.body);
-          callback(null, res, body);
-        });
-      }
+    }
 
     return req;
   }
