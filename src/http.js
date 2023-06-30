@@ -180,10 +180,6 @@ class HttpClient {
   request(rurl, data, callback, exheaders, exoptions) {
     var self = this;
     var options = self.buildRequest(rurl, data, exheaders, exoptions);
-    console.log(
-      "🚀 ~ file: http.js:167 ~ HttpClient ~ request ~ options:",
-      options
-    );
     var headers = options.headers;
     var req;
 
