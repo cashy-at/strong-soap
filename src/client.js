@@ -400,14 +400,11 @@ class Client extends Base {
       options,
       self
     );
-    console.log(
-      "🚀 ~ file: client.js:365 ~ Client ~ req=self.httpClient.request ~ req:",
-      req
-    );
 
     // Added mostly for testability, but possibly useful for debugging
     if (req != null) {
-      self.lastRequestHeaders = req.headers;
+      self.lastRequestHeaders =
+        req && req.request ? req.request.getHeaders() : undefined;
     }
     debug("client response. lastRequestHeaders: %j", self.lastRequestHeaders);
   }
