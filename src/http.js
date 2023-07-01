@@ -194,13 +194,13 @@ class HttpClient {
         req = self._request.post(
           options.uri,
           isMultipart ? options.multipart : options.body,
-          { multipart: isMultipart, headers: options.headers },
+          { ...options, multipart: isMultipart },
           self.requestCallback(req, callback)
         );
       } else if (options.method === "GET") {
         req = self._request.get(
           options.uri,
-          { headers: options.headers },
+          options,
           self.requestCallback(req, callback)
         );
       }

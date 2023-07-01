@@ -359,7 +359,7 @@ describe("SOAP Server", function () {
           function (err, result) {
             // node V3.x+ reports addresses as IPV6
             var addressParts = lastReqAddress.split(":");
-            addressParts[addressParts.length - 1].should.equal("127.0.0.1");
+            assert.equal(addressParts[addressParts.length - 1], "1"); // IP V6 format of localhost
             done();
           }
         );
