@@ -358,8 +358,7 @@ describe("SOAP Server", function () {
           { TradePrice: { price: 50000 } },
           function (err, result) {
             // node V3.x+ reports addresses as IPV6
-            var addressParts = lastReqAddress.split(":");
-            assert.equal(addressParts[addressParts.length - 1], "1"); // IP V6 format of localhost
+            assert.equal(lastReqAddress, "::1"); // IP V6 format of localhost
             done();
           }
         );
