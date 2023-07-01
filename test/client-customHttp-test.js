@@ -25,9 +25,11 @@ describe("custom http client", function () {
       events.EventEmitter.call(this);
       self.requests = [];
       self.maxSockets = 1;
+      self.defaultMaxSockets = 1;
       self.proxyStream = socket;
       self.options = options || {};
       self.proxyOptions = {};
+      this.keepAlive = false;
     }
 
     util.inherits(CustomAgent, events.EventEmitter);
@@ -69,13 +71,6 @@ describe("custom http client", function () {
       //Specify agent to use
       options.agent = this.agent;
       var headers = options.headers;
-      // var req = this.httpCl._request(options, function(err, res, body) {
-      //   if (err) {
-      //     return callback(err);
-      //   }
-      //   body = self.handleResponse(req, res, body);
-      //   callback(null, res, body);
-      // });
 
       var req;
       if (options.method === "POST") {
@@ -89,12 +84,9 @@ describe("custom http client", function () {
       } else if (options.method === "GET") {
         req = this.httpCl._request.get(
           options.uri,
-          { headers: options.headers },
+          { headers: options.headers, agent: options.agent },
           self.requestCallback(req, callback)
         );
-      }
-      if (headers.Connection !== "keep-alive") {
-        req.end(data);
       }
 
       util.inherits(CustomAgent, events.EventEmitter);
@@ -155,13 +147,11 @@ describe("custom http client", function () {
         } else if (options.method === "GET") {
           req = this.httpCl._request.get(
             options.uri,
-            { headers: options.headers },
+            { headers: options.headers, agent: options.agent },
             self.requestCallback(req, callback)
           );
         }
-        if (headers.Connection !== "keep-alive") {
-          req.end(data);
-        }
+
         return req;
       };
     };
@@ -197,7 +187,6 @@ describe("custom http client", function () {
       url,
       { httpClient: httpCustomClient },
       function (err, client) {
-        console.log("🚀 ~ file: client-customHttp-test.js:200 ~ err:", err);
         if (err) console.error(err);
         assert.ok(!err);
         assert.ok(client);

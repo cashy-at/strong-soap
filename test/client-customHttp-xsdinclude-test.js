@@ -68,12 +68,9 @@ describe("custom http client", function () {
       } else if (options.method === "GET") {
         req = this.httpCl._request.get(
           options.uri,
-          { headers: options.headers },
+          { headers: options.headers, agent: options.agent },
           self.requestCallback(req, callback)
         );
-      }
-      if (headers.Connection !== "keep-alive") {
-        req.end(data);
       }
       return req;
     };
