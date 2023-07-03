@@ -3,21 +3,21 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-"use strict";
+'use strict'
 
-var url = require("url");
-var requestModule = require("needle");
-var debug = require("debug")("strong-soap:http");
-var debugSensitive = require("debug")("strong-soap:http:sensitive");
-var httpntlm = require("httpntlm-maa");
-var uuid = require("uuid").v4;
+var url = require('url')
+var requestModule = require('needle')
+var debug = require('debug')('strong-soap:http')
+var debugSensitive = require('debug')('strong-soap:http:sensitive')
+var httpntlm = require('httpntlm-maa')
+var uuid = require('uuid').v4
 
 requestModule.defaults({
   parse_response: false,
   follow_max: 5,
-});
+})
 
-var VERSION = require("../package.json").version;
+var VERSION = require('../package.json').version
 
 /**
  * A class representing the http client
@@ -28,8 +28,8 @@ var VERSION = require("../package.json").version;
  */
 class HttpClient {
   constructor(options) {
-    this.options = options || {};
-    this._request = options.request || requestModule;
+    this.options = options || {}
+    this._request = options.request || requestModule
   }
 
   /**
@@ -41,39 +41,39 @@ class HttpClient {
    * @returns {Object} The http request object for the `request` module
    */
   buildRequest(rurl, data, exheaders, exoptions) {
-    var curl = url.parse(rurl);
-    var secure = curl.protocol === "https:";
-    var host = curl.hostname;
-    var port = parseInt(curl.port, 10);
-    var path = [curl.pathname || "/", curl.search || "", curl.hash || ""].join(
-      ""
-    );
-    var method = data ? "POST" : "GET";
+    var curl = url.parse(rurl)
+    var secure = curl.protocol === 'https:'
+    var host = curl.hostname
+    var port = parseInt(curl.port, 10)
+    var path = [curl.pathname || '/', curl.search || '', curl.hash || ''].join(
+      '',
+    )
+    var method = data ? 'POST' : 'GET'
     var headers = {
-      "User-Agent": "strong-soap/" + VERSION,
+      'User-Agent': 'strong-soap/' + VERSION,
       Accept:
-        "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
-      "Accept-Encoding": "none",
-      "Accept-Charset": "utf-8",
-      Connection: "close",
-      Host: host + (isNaN(port) ? "" : ":" + port),
-    };
-    var attr;
-    var header;
-    var attachments = [];
-    var mergeOptions = ["headers"];
+        'text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8',
+      'Accept-Encoding': 'none',
+      'Accept-Charset': 'utf-8',
+      Connection: 'close',
+      Host: host + (isNaN(port) ? '' : ':' + port),
+    }
+    var attr
+    var header
+    var attachments = []
+    var mergeOptions = ['headers']
     if (exoptions) {
-      attachments = exoptions.attachments || [];
+      attachments = exoptions.attachments || []
     }
 
-    if (typeof data === "string" && attachments.length === 0) {
-      headers["Content-Length"] = Buffer.byteLength(data, "utf8");
-      headers["Content-Type"] = "application/x-www-form-urlencoded";
+    if (typeof data === 'string' && attachments.length === 0) {
+      headers['Content-Length'] = Buffer.byteLength(data, 'utf8')
+      headers['Content-Type'] = 'application/x-www-form-urlencoded'
     }
 
-    exheaders = exheaders || {};
+    exheaders = exheaders || {}
     for (attr in exheaders) {
-      headers[attr] = exheaders[attr];
+      headers[attr] = exheaders[attr]
     }
 
     var options = {
@@ -81,50 +81,50 @@ class HttpClient {
       method: method,
       headers: headers,
       followAllRedirects: true,
-    };
+    }
 
     if (attachments.length > 0) {
-      const start = uuid();
-      headers["Content-Type"] =
+      const start = uuid()
+      headers['Content-Type'] =
         'multipart/related; type="application/xop+xml"; start="<' +
         start +
         '>"; start-info="text/xml"; boundary=' +
-        uuid();
+        uuid()
       const multipart = [
         {
-          "Content-Type": 'application/xop+xml; charset=UTF-8; type="text/xml"',
-          "Content-ID": "<" + start + ">",
+          'Content-Type': 'application/xop+xml; charset=UTF-8; type="text/xml"',
+          'Content-ID': '<' + start + '>',
           body: data,
         },
-      ];
+      ]
 
       attachments.forEach((attachment) => {
         multipart.push({
-          "Content-Type": attachment.mimetype,
-          "Content-Transfer-Encoding": "binary",
-          "Content-ID": "<" + attachment.contentId + ">",
-          "Content-Disposition":
+          'Content-Type': attachment.mimetype,
+          'Content-Transfer-Encoding': 'binary',
+          'Content-ID': '<' + attachment.contentId + '>',
+          'Content-Disposition':
             'attachment; filename="' + attachment.name + '"',
           body: attachment.body,
-        });
-      });
-      options.multipart = multipart;
+        })
+      })
+      options.multipart = multipart
     } else {
-      options.body = data;
+      options.body = data
     }
 
-    exoptions = exoptions || {};
+    exoptions = exoptions || {}
     for (attr in exoptions) {
       if (mergeOptions.indexOf(attr) !== -1) {
         for (header in exoptions[attr]) {
-          options[attr][header] = exoptions[attr][header];
+          options[attr][header] = exoptions[attr][header]
         }
       } else {
-        options[attr] = exoptions[attr];
+        options[attr] = exoptions[attr]
       }
     }
-    debug("Http request: %j", options);
-    return options;
+    debug('Http request: %j', options)
+    return options
   }
 
   /**
@@ -135,99 +135,99 @@ class HttpClient {
    * @param {Object} The parsed body
    */
   handleResponse(req, res, body) {
-    debug("Http response body: %j", body);
-    if (typeof body === "string") {
+    debug('Http response body: %j', body)
+    if (typeof body === 'string') {
       // Remove any extra characters that appear before or after the SOAP
       // envelope.
       var match = body.match(
-        /(?:<\?[^?]*\?>[\s]*)?<([^:]*):Envelope([\S\s]*)<\/\1:Envelope>/i
-      );
+        /(?:<\?[^?]*\?>[\s]*)?<([^:]*):Envelope([\S\s]*)<\/\1:Envelope>/i,
+      )
       if (match) {
-        body = match[0];
+        body = match[0]
       }
     }
-    return body;
+    return body
   }
 
   //check if NTLM authentication needed
   isNtlmAuthRequired(ntlmSecurity, methodName) {
     //if ntlmSecurity is not set, then remote web service is not NTLM authenticated Web Service
     if (ntlmSecurity == null) {
-      return false;
+      return false
     } else if (
-      methodName === "GET" &&
+      methodName === 'GET' &&
       (ntlmSecurity.wsdlAuthRequired == null ||
         ntlmSecurity.wsdlAuthRequired === false)
     ) {
       //In some WebServices, getting remote WSDL is not NTLM authenticated. Only WebService invocation is NTLM authenticated.
-      return false;
+      return false
     }
     //need NTLM authentication for both 'GET' (remote wsdl retrieval) and 'POST' (Web Service invocation)
-    return true;
+    return true
   }
 
   requestCallback(req, callback) {
-    const self = this;
+    const self = this
     return function (err, res, body) {
       if (err) {
-        return callback(err);
+        return callback(err)
       }
-      body = self.handleResponse(req, res, body);
-      callback(null, res, body);
-    };
+      body = self.handleResponse(req, res, body)
+      callback(null, res, body)
+    }
   }
 
   request(rurl, data, callback, exheaders, exoptions) {
-    var self = this;
-    var options = self.buildRequest(rurl, data, exheaders, exoptions);
-    var headers = options.headers;
-    var req;
+    var self = this
+    var options = self.buildRequest(rurl, data, exheaders, exoptions)
+    var headers = options.headers
+    var req
 
     //typically clint.js would do addOptions() if security is set in order to get all security options added to options{}. But client.js
     //addOptions() code runs after this code is trying to contact server to load remote WSDL, hence we have NTLM authentication
     //object passed in as option to createClient() call for now. Revisit.
-    var ntlmSecurity = this.options.NTLMSecurity;
-    var ntlmAuth = self.isNtlmAuthRequired(ntlmSecurity, options.method);
+    var ntlmSecurity = this.options.NTLMSecurity
+    var ntlmAuth = self.isNtlmAuthRequired(ntlmSecurity, options.method)
     if (!ntlmAuth) {
-      if (options.method === "POST") {
-        const isMultipart = !!options.multipart;
+      if (options.method === 'POST') {
+        const isMultipart = !!options.multipart
         req = self._request.post(
           options.uri,
           isMultipart ? options.multipart : options.body,
           { ...options, multipart: isMultipart },
-          self.requestCallback(req, callback)
-        );
-      } else if (options.method === "GET") {
+          self.requestCallback(req, callback),
+        )
+      } else if (options.method === 'GET') {
         req = self._request.get(
           options.uri,
           options,
-          self.requestCallback(req, callback)
-        );
+          self.requestCallback(req, callback),
+        )
       }
     } else {
       //httpntlm code needs 'url' in options{}. It should be plain string, not parsed uri
-      options.url = rurl;
-      options.username = ntlmSecurity.username;
-      options.password = ntlmSecurity.password;
-      options.domain = ntlmSecurity.domain;
-      options.workstation = ntlmSecurity.workstation;
-      options.request = requestModule;
-      options.ntlm = { strict: true };
+      options.url = rurl
+      options.username = ntlmSecurity.username
+      options.password = ntlmSecurity.password
+      options.domain = ntlmSecurity.domain
+      options.workstation = ntlmSecurity.workstation
+      options.request = requestModule
+      options.ntlm = { strict: true }
       //httpntlm code uses lower case for method names - 'get', 'post' etc
-      var method = options.method.toLocaleLowerCase();
-      debugSensitive("NTLM options: %j for method: %s", options, method);
-      debug("httpntlm method: %s", method);
-      req = httpntlm["method"](method, options, function (err, res) {
+      var method = options.method.toLocaleLowerCase()
+      debugSensitive('NTLM options: %j for method: %s', options, method)
+      debug('httpntlm method: %s', method)
+      req = httpntlm['method'](method, options, function (err, res) {
         if (err) {
-          return callback(err);
+          return callback(err)
         }
-        var body = self.handleResponse(req, res, res.body);
-        callback(null, res, body);
-      });
+        var body = self.handleResponse(req, res, res.body)
+        callback(null, res, body)
+      })
     }
 
-    return req;
+    return req
   }
 }
 
-module.exports = HttpClient;
+module.exports = HttpClient
